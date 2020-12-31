@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+							http://www.springframework.org/schema/beans/spring-beans.xsd
+							http://www.springframework.org/schema/context
+							http://www.springframework.org/schema/context/spring-context.xsd
+							http://www.springframework.org/schema/tx
+							http://www.springframework.org/schema/tx/spring-tx.xsd">
+	<!-- 设定JDBC.properties文件路径 -->
+	<context:property-placeholder location="classpath*:/jdbc.properties"/>
+
+	<!-- 设定Spring 注解扫描基础包的位置 -->
+	<context:component-scan base-package="com.yuan.ums">
+		<!-- 对于Spring 核心容器来说，无法进行请求映射处理，因此不能够处理扫描和映射的有关注解 -->
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+
+	<!-- 配置数据源DateSource 信息 -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="driverClassName" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url}"/>
+		<property name="username" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+		<property name="minIdle" value="${druid.minIdle}"/>
+		<property name="maxActive" value="${druid.maxActive}"/>
+		<property name="initialSize" value="${druid.initialSize}"/>
+		<property name="minEvictableIdleTimeMillis" value="${druid.minEvictableIdleTimeMillis}"/>
+		<property name="maxEvictableIdleTimeMillis" value="${druid.maxEvictableIdleTimeMillis}"/>
+	</bean>
+
+	<!-- 配置Mybatis 的 SqlSessionFactory 的 Bean -->
+	<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 依赖注入DateSource信息 -->
+		<property name="dataSource" ref="dataSource"/>
+		<!-- 设置Mybatis的映射文件路径 -->
+		<property name="mapperLocations" value="classpath*:/mapper/*.Mapper.xml"/>
+		<!-- 设定实体类别名基础包 -->
+		<property name="typeAliasesPackage" value="com.yuan.ums.pojo.entity"/>
+	</bean>
+
+	<!-- 配置Mybatis 的持久层接口扫描机制 -->
+	<bean id="scannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactoryBean"/>
+		<property name="basePackage" value="com.yuan.ums.dao"/>
+	</bean>
+
+	<!-- 配置采用Spring所提供的事务处理机制 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<!-- 注入信息 -->
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+
+	<!-- 采用注解形式进行事务处理 -->
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+</beans>
